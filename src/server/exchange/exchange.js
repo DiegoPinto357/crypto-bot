@@ -1,0 +1,62 @@
+const timeframeInMilliseconds = require('../constants/timeframeInMilliseconds');
+
+let client;
+let market;
+let timeframe;
+let historyData;
+
+const getOHLCV = async n => {
+  const now = await client.fetchTime();
+  const since = now - n * timeframeInMilliseconds[timeframe];
+  return await client.fetchOHLCV(market, timeframe, since);
+};
+
+const setup = async (paramClient, config) => {
+  const { asset, base, timeframe: configTimeframe } = config;
+  client = paramClient;
+  timeframe = configTimeframe;
+  market = `${asset}/${base}`;
+
+  historyData = await getOHLCV(100); //40
+  return historyData;
+};
+
+const loop = () => client.loop();
+
+const getData = async () => {
+  const [OHLCV, marketPrice, openOrders] = await Promise.all([
+    getOHLCV(1),
+    client.fetchTicker(market),
+    client.fetchOpenOrders(),
+  ]);
+
+  const lastHistoryTimestamp = historyData.slice(-1)[0][0];
+  const lastServerTimestamp = OHLCV[0][0]; // FIXME Cannot read property '0' of undefined
+
+  let hasNewCandle = false;
+  if (lastServerTimestamp > lastHistoryTimestamp) {
+    historyData.push(OHLCV[0]);
+    hasNewCandle = true;
+  }
+
+  return {
+    hasNewCandle,
+    OHLCV: historyData,
+    marketPrice,
+    openOrders,
+  };
+};
+
+const createOrder = (...args) => client.createOrder(...args);
+const cancelOrder = (...args) => client.cancelOrder(...args);
+
+const getBalance = () => client.getBalance(); // FIXME
+
+module.exports = {
+  setup,
+  loop,
+  getData,
+  createOrder,
+  cancelOrder,
+  getBalance,
+};
