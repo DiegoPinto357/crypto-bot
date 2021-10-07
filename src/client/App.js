@@ -1,25 +1,8 @@
-import logo from './logo.svg';
-import './App.css';
+import StockChart from './StockChart';
+import data from '../server/cryptoData/BTC-USDT/1m/aggregated-1632947880000-1633061880000.json';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
-}
+const App = () => {
+  return <StockChart data={data} dateTimeFormat="%H:%M" />;
+};
 
 export default App;
