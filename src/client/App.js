@@ -1,28 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { Box } from '@mui/material';
 import StockChart from './StockChart';
 import socketIOClient from 'socket.io-client';
 
 const ENDPOINT = 'http://127.0.0.1:4001';
 
 const App = () => {
-  const [data, setData] = useState({});
-  const [timestamp, setTimestamp] = useState('');
+  const [data, setData] = useState({ OHLCV: [], indicators: { rsi: [] } });
 
   useEffect(() => {
     const socket = socketIOClient(ENDPOINT);
 
-    socket.on('FromAPI', setTimestamp);
-
-    socket.on('data', setData);
+    socket.on('data', newData => {
+      const { OHLCV, indicators } = data;
+      OHLCV.push(...newData.OHLCV);
+      indicators.rsi.push(...newData.indicators.rsi);
+      setData({ OHLCV, indicators });
+    });
   }, []);
 
   return (
-    <div>
-      <p>
-        It's <time dateTime={timestamp}>{timestamp}</time>
-      </p>
-      <StockChart data={data.OHLCV} dateTimeFormat="%H:%M" />
-    </div>
+    <Box display="flex" direction="column" p={4}>
+      <Box flex="1" width="100%">
+        <StockChart data={data} dateTimeFormat="%H:%M" />
+      </Box>
+    </Box>
   );
 };
 

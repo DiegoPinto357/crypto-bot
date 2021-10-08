@@ -21,29 +21,35 @@ import {
   MouseCoordinateX,
   MouseCoordinateY,
   ZoomButtons,
+  RSISeries,
+  RSITooltip,
   withDeviceRatio,
   withSize,
 } from 'react-financial-charts';
 
-const mapData = rawData =>
-  rawData.map(item => ({
+const mapData = ({ OHLCV, indicators }) =>
+  OHLCV.map((item, index) => ({
     date: new Date(item[0]),
     open: item[1],
     high: item[2],
     low: item[3],
     close: item[4],
     volume: item[5],
+    indicators: {
+      rsi: indicators.rsi[index],
+    },
   }));
 
-const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
-  if (!initialData) return null;
-
+const StockChart = ({
+  data: initialData = { OHLCV: [], indicators: [] },
+  dateTimeFormat = '%d %b',
+  width,
+  height,
+}) => {
   const ScaleProvider =
     discontinuousTimeScaleProviderBuilder().inputDateAccessor(
       d => new Date(d.date)
     );
-  const height = 700;
-  const width = 1500;
   const margin = { left: 0, right: 48, top: 0, bottom: 24 };
 
   const ema12 = ema()
@@ -63,6 +69,7 @@ const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
     .accessor(d => d.ema26);
 
   const calculatedData = ema26(ema12(mapData(initialData)));
+
   const { data, xScale, xAccessor, displayXAccessor } =
     ScaleProvider(calculatedData);
   const pricesDisplayFormat = format('.2f');
@@ -72,9 +79,16 @@ const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
 
   const gridHeight = height - margin.top - margin.bottom;
 
+  const rsiChartHeight = 100;
+  const rsiChartOrigin = (_, h) => [0, h - rsiChartHeight];
+
   const volumeChartHeight = 100;
-  const volumeChartOrigin = (_, h) => [0, h - volumeChartHeight];
-  const chartHeight = gridHeight - volumeChartHeight;
+  const volumeChartOrigin = (_, h) => [
+    0,
+    h - volumeChartHeight - rsiChartHeight - 32,
+  ];
+
+  const chartHeight = gridHeight - volumeChartHeight - rsiChartHeight - 32;
 
   const timeDisplayFormat = timeFormat(dateTimeFormat);
 
@@ -94,6 +108,8 @@ const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
     return data.volume;
   };
 
+  const rsiSeries = data => data.indicators.rsi;
+
   const openCloseColor = data => {
     return data.close > data.open ? '#26a69a' : '#ef5350';
   };
@@ -112,9 +128,13 @@ const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
       xExtents={xExtents}
       zoomAnchor={lastVisibleItemBasedZoomAnchor}
     >
-      <Chart id={3} height={chartHeight} yExtents={candleChartExtents}>
+      <Chart id={1} height={chartHeight} yExtents={candleChartExtents}>
         <XAxis showGridLines showTickLabel={false} />
-        <YAxis showGridLines tickFormat={pricesDisplayFormat} />
+        <YAxis
+          showGridLines
+          tickFormat={pricesDisplayFormat}
+          yZoomWidth={200}
+        />
         <CandlestickSeries />
         <LineSeries yAccessor={ema26.accessor()} strokeStyle={ema26.stroke()} />
         <CurrentCoordinate
@@ -161,7 +181,7 @@ const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
       </Chart>
 
       <Chart
-        id={4}
+        id={2}
         height={volumeChartHeight}
         yExtents={barChartExtents}
         origin={volumeChartOrigin}
@@ -184,9 +204,30 @@ const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
           origin={[8, 16]}
         />
       </Chart>
+
+      <Chart
+        id={3}
+        yExtents={[0, 100]}
+        origin={rsiChartOrigin}
+        height={rsiChartHeight}
+      >
+        <XAxis />
+        <YAxis tickValues={[30, 50, 70]} />
+
+        <RSISeries yAccessor={rsiSeries} />
+
+        <RSITooltip
+          origin={[8, 16]}
+          yAccessor={rsiSeries}
+          options={{ windowSize: 3 }}
+        />
+      </Chart>
+
       <CrossHairCursor />
     </ChartCanvas>
   );
 };
 
-export default StockChart;
+export default withSize({ style: { minHeight: 700 } })(
+  withDeviceRatio()(StockChart)
+);

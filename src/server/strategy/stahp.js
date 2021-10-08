@@ -71,6 +71,7 @@ const setup = (initialData, plotFunc) => {
   sellHistory = [];
 
   plot = plotFunc;
+  plot({ OHLCV: initialData, indicators: { rsi: rsi.getResult() } });
 };
 
 const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
@@ -191,7 +192,7 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
     .map(values => values.histogram)
     .filter(value => value !== undefined);
 
-  plot({ OHLCV });
+  plot({ OHLCV: OHLCV.slice(-1), indicators: { rsi: [rsiValue] } });
 
   // return;
 

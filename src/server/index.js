@@ -20,13 +20,6 @@ const io = socketIo(server, {
   },
 });
 
-const getApiAndEmit = socket => {
-  const response = new Date();
-  socket.emit('FromAPI', response);
-};
-
-let interval;
-
 io.on('connection', socket => {
   console.log('New client connected');
 
@@ -40,19 +33,14 @@ io.on('connection', socket => {
     simConfig: {
       dataFile: 'aggregated-1632947880000-1633061880000.json',
       transientLength: 100,
-      timeMultiplier: 10 * 60,
+      timeMultiplier: 2 * 60,
     },
   };
 
   main.run(config, socket);
 
-  if (interval) {
-    clearInterval(interval);
-  }
-  interval = setInterval(() => getApiAndEmit(socket), 1000);
   socket.on('disconnect', () => {
     console.log('Client disconnected');
-    clearInterval(interval);
   });
 });
 
