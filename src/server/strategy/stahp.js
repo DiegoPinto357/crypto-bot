@@ -26,14 +26,21 @@ let stopLossHistory;
 let stopGainHistory;
 let sellHistory;
 
+const setupRSI = closeValues => {
+  const period = 10;
+
+  rsi = new RSI({
+    values: closeValues,
+    period,
+  });
+  rsi.getResult().push(...new Array(period));
+};
+
 const setup = (initialData, plotFunc) => {
   const openValues = initialData.map(values => values[1]);
   const closeValues = initialData.map(values => values[4]);
 
-  rsi = new RSI({
-    values: closeValues,
-    period: 10,
-  });
+  setupRSI(closeValues);
 
   macd = new MACD({
     values: closeValues,
@@ -72,6 +79,7 @@ const setup = (initialData, plotFunc) => {
 
   plot = plotFunc;
   plot({ OHLCV: initialData, indicators: { rsi: rsi.getResult() } });
+  console.log(initialData.length, rsi.getResult().length);
 };
 
 const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
