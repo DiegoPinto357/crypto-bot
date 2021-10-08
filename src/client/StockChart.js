@@ -36,6 +36,8 @@ const mapData = rawData =>
   }));
 
 const StockChart = ({ data: initialData, dateTimeFormat = '%d %b' }) => {
+  if (!initialData) return null;
+
   const ScaleProvider =
     discontinuousTimeScaleProviderBuilder().inputDateAccessor(
       d => new Date(d.date)

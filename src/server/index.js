@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const data = require('../server/cryptoData/BTC-USDT/1m/fav-1633105080000-1633135020000.json');
 
 const port = 4001;
 
@@ -21,7 +22,6 @@ const io = socketIo(server, {
 
 const getApiAndEmit = socket => {
   const response = new Date();
-  // Emitting a new message. Will be consumed by the client
   socket.emit('FromAPI', response);
 };
 
@@ -29,6 +29,9 @@ let interval;
 
 io.on('connection', socket => {
   console.log('New client connected');
+
+  socket.emit('data', data);
+
   if (interval) {
     clearInterval(interval);
   }
