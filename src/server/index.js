@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const data = require('../server/cryptoData/BTC-USDT/1m/fav-1633105080000-1633135020000.json');
+const main = require('./main');
 
 const port = 4001;
 
@@ -30,7 +30,21 @@ let interval;
 io.on('connection', socket => {
   console.log('New client connected');
 
-  socket.emit('data', data);
+  const config = {
+    asset: 'BTC',
+    base: 'USDT',
+    timeframe: '1m',
+    loopPeriodRatio: 12,
+    sandboxMode: true,
+    sim: true,
+    simConfig: {
+      dataFile: 'aggregated-1632947880000-1633061880000.json',
+      transientLength: 100,
+      timeMultiplier: 10 * 60,
+    },
+  };
+
+  main.run(config, socket);
 
   if (interval) {
     clearInterval(interval);
@@ -43,21 +57,3 @@ io.on('connection', socket => {
 });
 
 server.listen(port, () => console.log(`Listening on port ${port}`));
-
-// const main = require('./main');
-
-// const config = {
-//   asset: 'BTC',
-//   base: 'USDT',
-//   timeframe: '1h',
-//   loopPeriodRatio: 12,
-//   sandboxMode: true,
-//   sim: true,
-//   simConfig: {
-//     dataFile: 'aggregated-1631678400000-1633482000000.json',
-//     transientLength: 100,
-//     timeMultiplier: 200 * 60,
-//   },
-// };
-
-// main.run(config);

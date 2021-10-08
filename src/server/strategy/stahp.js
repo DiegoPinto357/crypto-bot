@@ -1,12 +1,12 @@
-const asciichart = require('asciichart');
 const { MACD, RSI } = require('technicalindicators');
 const { CustomIndicator, CandleSign } = require('./indicators');
-const { plot } = require('../libs/terminalPlot');
 const exchange = require('../exchange');
 
 const minProfit = 0.06;
 const stopLossMargin = 0.03;
 const stopGainMargin = 0.04;
+
+let plot;
 
 let rsi;
 let macd;
@@ -26,7 +26,7 @@ let stopLossHistory;
 let stopGainHistory;
 let sellHistory;
 
-const setup = initialData => {
+const setup = (initialData, plotFunc) => {
   const openValues = initialData.map(values => values[1]);
   const closeValues = initialData.map(values => values[4]);
 
@@ -69,6 +69,8 @@ const setup = initialData => {
   stopLossHistory = new Array(closeValues.length).fill(undefined);
   stopGainHistory = new Array(closeValues.length).fill(undefined);
   sellHistory = [];
+
+  plot = plotFunc;
 };
 
 const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
@@ -189,17 +191,19 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
     .map(values => values.histogram)
     .filter(value => value !== undefined);
 
+  plot({ OHLCV });
+
   // return;
 
-  console.clear();
-  const stopLossLine = new Array(closeValues.length)
-    .fill(stopLossValue)
-    .filter(value => value !== undefined);
-  const stopGainLine = new Array(closeValues.length).fill(stopGainValue);
-  plot([stopLossLine, stopGainLine, closeValues], {
-    height: 40,
-    colors: [asciichart.red, asciichart.green, asciichart.default],
-  });
+  // console.clear();
+  // const stopLossLine = new Array(closeValues.length)
+  //   .fill(stopLossValue)
+  //   .filter(value => value !== undefined);
+  // const stopGainLine = new Array(closeValues.length).fill(stopGainValue);
+  // plot([stopLossLine, stopGainLine, closeValues], {
+  //   height: 40,
+  //   colors: [asciichart.red, asciichart.green, asciichart.default],
+  // });
 
   // plot(buyGateData);
   // plot(buyTriggerData);
@@ -219,10 +223,10 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
   // const line0Vol = new Array(candleSignData.length).fill(0);
   // plot([line0Vol, candleSignData]);
 
-  console.log(exchange.getBalance().baseBalance);
-  console.log(exchange.getBalance().assetBalance);
-  console.log(exchange.getBalance().profit);
-  console.log(orders.length);
+  // console.log(exchange.getBalance().baseBalance);
+  // console.log(exchange.getBalance().assetBalance);
+  // console.log(exchange.getBalance().profit);
+  // console.log(orders.length);
 };
 
 module.exports = {
