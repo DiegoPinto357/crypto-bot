@@ -33,7 +33,7 @@ io.on('connection', socket => {
     simConfig: {
       dataFile: 'aggregated-1632947880000-1633061880000.json',
       transientLength: 100,
-      timeMultiplier: 2 * 60,
+      timeMultiplier: 10 * 60,
     },
   };
 

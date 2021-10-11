@@ -23,6 +23,8 @@ import {
   ZoomButtons,
   RSISeries,
   RSITooltip,
+  MACDSeries,
+  MACDTooltip,
   withDeviceRatio,
   withSize,
 } from 'react-financial-charts';
@@ -37,8 +39,33 @@ const mapData = ({ OHLCV, indicators }) =>
     volume: item[5],
     indicators: {
       rsi: indicators.rsi[index],
+      macd: indicators.macd[index],
     },
   }));
+
+const candleChartExtents = data => [data.high, data.low];
+
+const yEdgeIndicator = data => data.close;
+
+const volumeSeries = data => data.volume;
+const volumeChartExtents = data => data.volume;
+
+const rsiSeries = data => data.indicators.rsi;
+
+const macdSeries = data => data.indicators.macd;
+const macdChartExtents = data => {
+  if (!data.indicators.macd) return;
+  const { macd, divergence, signal } = data.indicators.macd;
+  return [
+    Math.min(macd, divergence, signal),
+    Math.max(macd, divergence, signal),
+  ];
+};
+
+const openCloseColor = data => (data.close > data.open ? '#26a69a' : '#ef5350');
+
+const positiveNegativeColor = data =>
+  data.indicators.macd.divergence >= 0 ? '#26a69a' : '#ef5350';
 
 const StockChart = ({
   data: initialData = { OHLCV: [], indicators: [] },
@@ -50,7 +77,7 @@ const StockChart = ({
     discontinuousTimeScaleProviderBuilder().inputDateAccessor(
       d => new Date(d.date)
     );
-  const margin = { left: 0, right: 48, top: 0, bottom: 24 };
+  const margin = { left: 0, right: 96, top: 0, bottom: 32 };
 
   const ema12 = ema()
     .id(1)
@@ -78,40 +105,34 @@ const StockChart = ({
   const xExtents = [min, max + 5];
 
   const gridHeight = height - margin.top - margin.bottom;
+  const secondaryChartHeight = 100;
+  const chartGutter = 32;
+  const numOfSecondaryCharts = 3;
 
-  const rsiChartHeight = 100;
-  const rsiChartOrigin = (_, h) => [0, h - rsiChartHeight];
+  const mainChartHeight =
+    gridHeight - numOfSecondaryCharts * (secondaryChartHeight + chartGutter);
 
-  const volumeChartHeight = 100;
-  const volumeChartOrigin = (_, h) => [
+  const volumeChartOrigin = (_, h) => [0, mainChartHeight];
+
+  const rsiChartOrigin = (_, h) => [
     0,
-    h - volumeChartHeight - rsiChartHeight - 32,
+    mainChartHeight + secondaryChartHeight + chartGutter,
   ];
 
-  const chartHeight = gridHeight - volumeChartHeight - rsiChartHeight - 32;
+  const macdChartOrigin = (_, h) => [
+    0,
+    mainChartHeight + 2 * secondaryChartHeight + chartGutter,
+  ];
 
   const timeDisplayFormat = timeFormat(dateTimeFormat);
 
-  const barChartExtents = data => {
-    return data.volume;
-  };
-
-  const candleChartExtents = data => {
-    return [data.high, data.low];
-  };
-
-  const yEdgeIndicator = data => {
-    return data.close;
-  };
-
-  const volumeSeries = data => {
-    return data.volume;
-  };
-
-  const rsiSeries = data => data.indicators.rsi;
-
-  const openCloseColor = data => {
-    return data.close > data.open ? '#26a69a' : '#ef5350';
+  const macdAppearance = {
+    fillStyle: { divergence: positiveNegativeColor },
+    strokeStyle: {
+      macd: '#0093FF',
+      signal: '#D84315',
+      zero: 'rgba(0, 0, 0, 0.3)',
+    },
   };
 
   return (
@@ -128,7 +149,7 @@ const StockChart = ({
       xExtents={xExtents}
       zoomAnchor={lastVisibleItemBasedZoomAnchor}
     >
-      <Chart id={1} height={chartHeight} yExtents={candleChartExtents}>
+      <Chart id={1} height={mainChartHeight} yExtents={candleChartExtents}>
         <XAxis showGridLines showTickLabel={false} />
         <YAxis
           showGridLines
@@ -176,14 +197,14 @@ const StockChart = ({
           ]}
         />
 
-        <ZoomButtons />
+        {/* <ZoomButtons /> */}
         <OHLCTooltip origin={[8, 16]} />
       </Chart>
 
       <Chart
         id={2}
-        height={volumeChartHeight}
-        yExtents={barChartExtents}
+        height={secondaryChartHeight}
+        yExtents={volumeChartExtents}
         origin={volumeChartOrigin}
         padding={{ top: 8, bottom: 8 }}
       >
@@ -209,9 +230,9 @@ const StockChart = ({
         id={3}
         yExtents={[0, 100]}
         origin={rsiChartOrigin}
-        height={rsiChartHeight}
+        height={secondaryChartHeight}
       >
-        <XAxis />
+        {/* <XAxis /> */}
         <YAxis tickValues={[30, 50, 70]} />
 
         <RSISeries yAccessor={rsiSeries} />
@@ -219,7 +240,30 @@ const StockChart = ({
         <RSITooltip
           origin={[8, 16]}
           yAccessor={rsiSeries}
-          options={{ windowSize: 3 }}
+          options={{ windowSize: 10 }} // TODO get options dynamically
+        />
+      </Chart>
+
+      <Chart
+        id={4}
+        yExtents={macdChartExtents}
+        origin={macdChartOrigin}
+        height={secondaryChartHeight}
+      >
+        <XAxis />
+        <YAxis ticks={4} />
+
+        <MACDSeries
+          yAccessor={macdSeries}
+          widthRatio={0.8}
+          {...macdAppearance}
+        />
+
+        <MACDTooltip
+          origin={[8, 16]}
+          yAccessor={macdSeries}
+          appearance={macdAppearance}
+          options={{ fast: 12, signal: 9, slow: 26 }} // TODO get options dynamically
         />
       </Chart>
 
@@ -228,6 +272,6 @@ const StockChart = ({
   );
 };
 
-export default withSize({ style: { minHeight: 700 } })(
+export default withSize({ style: { minHeight: 800 } })(
   withDeviceRatio()(StockChart)
 );

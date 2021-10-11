@@ -6,15 +6,33 @@ import socketIOClient from 'socket.io-client';
 const ENDPOINT = 'http://127.0.0.1:4001';
 
 const App = () => {
-  const [data, setData] = useState({ OHLCV: [], indicators: { rsi: [] } });
+  const [data, setData] = useState({
+    OHLCV: [],
+    indicators: { rsi: [], macd: [] },
+  });
 
   useEffect(() => {
     const socket = socketIOClient(ENDPOINT);
 
     socket.on('data', newData => {
+      // setData(currentData => {
+      //   const { OHLCV, indicators } = currentData;
+      //   OHLCV.push(...newData.OHLCV);
+      //   indicators.rsi.push(...newData.indicators.rsi);
+      //   return { OHLCV, indicators };
+      // });
+
       const { OHLCV, indicators } = data;
       OHLCV.push(...newData.OHLCV);
       indicators.rsi.push(...newData.indicators.rsi);
+      indicators.macd.push(
+        ...newData.indicators.macd.map(({ MACD, signal, histogram }) => ({
+          macd: MACD,
+          signal,
+          divergence: histogram,
+        }))
+      );
+
       setData({ OHLCV, indicators });
     });
   }, []);

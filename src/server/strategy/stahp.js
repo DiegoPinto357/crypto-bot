@@ -26,6 +26,13 @@ let stopLossHistory;
 let stopGainHistory;
 let sellHistory;
 
+const padArray = (array, length, value) => {
+  const initialData = [...array];
+  const padding = new Array(length).fill(value);
+  array.length = 0;
+  array.push(...[...padding, ...initialData]);
+};
+
 const setupRSI = closeValues => {
   const period = 10;
 
@@ -33,7 +40,23 @@ const setupRSI = closeValues => {
     values: closeValues,
     period,
   });
-  rsi.getResult().push(...new Array(period));
+  padArray(rsi.getResult(), period);
+};
+
+const setupMACD = closeValues => {
+  const fastPeriod = 12;
+  const slowPeriod = 26;
+  const signalPeriod = 9;
+
+  macd = new MACD({
+    values: closeValues,
+    fastPeriod,
+    slowPeriod,
+    signalPeriod,
+    SimpleMAOscillator: false,
+    SimpleMASignal: false,
+  });
+  padArray(macd.getResult(), slowPeriod - 1, {});
 };
 
 const setup = (initialData, plotFunc) => {
@@ -41,15 +64,7 @@ const setup = (initialData, plotFunc) => {
   const closeValues = initialData.map(values => values[4]);
 
   setupRSI(closeValues);
-
-  macd = new MACD({
-    values: closeValues,
-    fastPeriod: 12,
-    slowPeriod: 26,
-    signalPeriod: 9,
-    SimpleMAOscillator: false,
-    SimpleMASignal: false,
-  });
+  setupMACD(closeValues);
 
   candleSign = new CandleSign({
     open: openValues,
@@ -78,8 +93,10 @@ const setup = (initialData, plotFunc) => {
   sellHistory = [];
 
   plot = plotFunc;
-  plot({ OHLCV: initialData, indicators: { rsi: rsi.getResult() } });
-  console.log(initialData.length, rsi.getResult().length);
+  plot({
+    OHLCV: initialData,
+    indicators: { rsi: rsi.getResult(), macd: macd.getResult() },
+  });
 };
 
 const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
@@ -200,7 +217,10 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
     .map(values => values.histogram)
     .filter(value => value !== undefined);
 
-  plot({ OHLCV: OHLCV.slice(-1), indicators: { rsi: [rsiValue] } });
+  plot({
+    OHLCV: OHLCV.slice(-1),
+    indicators: { rsi: [rsiValue], macd: [macdValue] },
+  });
 
   // return;
 
