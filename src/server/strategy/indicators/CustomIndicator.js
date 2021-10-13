@@ -1,6 +1,6 @@
 module.exports = class CustomIndicator {
-  constructor({ initialValue, calcFunc }) {
-    this.data = [initialValue];
+  constructor({ initialData, calcFunc }) {
+    this.data = initialData;
     this.calcFunc = calcFunc;
   }
 

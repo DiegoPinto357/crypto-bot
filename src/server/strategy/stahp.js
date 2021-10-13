@@ -6,6 +6,7 @@ const minProfit = 0.06;
 const stopLossMargin = 0.03;
 const stopGainMargin = 0.04;
 
+let socket;
 let plot;
 
 let rsi;
@@ -59,7 +60,7 @@ const setupMACD = closeValues => {
   padArray(macd.getResult(), slowPeriod - 1, {});
 };
 
-const setup = (initialData, plotFunc) => {
+const setup = (initialData, socketParam) => {
   const openValues = initialData.map(values => values[1]);
   const closeValues = initialData.map(values => values[4]);
 
@@ -72,7 +73,7 @@ const setup = (initialData, plotFunc) => {
   });
 
   buyGate = new CustomIndicator({
-    initialValue: 0,
+    initialData: new Array(closeValues.length).fill(0),
     calcFunc: (data, { rsiValue, macdHistogram, lastTrigger }) => {
       if (rsiValue <= 30 && macdHistogram < 0) return 1;
       if (lastTrigger === 1) return 0;
@@ -81,7 +82,7 @@ const setup = (initialData, plotFunc) => {
   });
 
   buyTrigger = new CustomIndicator({
-    initialValue: 0,
+    initialData: new Array(closeValues.length).fill(0),
     calcFunc: (data, { gate, candleSign }) => {
       const lastTrigger = data.slice(-1)[0];
       return lastTrigger === 0 && gate === 1 && candleSign === 1 ? 1 : 0;
@@ -92,14 +93,20 @@ const setup = (initialData, plotFunc) => {
   stopGainHistory = new Array(closeValues.length).fill(undefined);
   sellHistory = [];
 
-  plot = plotFunc;
+  socket = socketParam;
+  plot = data => socket.emit('data', data);
+
   plot({
     OHLCV: initialData,
     indicators: { rsi: rsi.getResult(), macd: macd.getResult() },
+    custom: [{ name: 'buyGate', data: buyGate.getResult() }],
   });
 };
 
 const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
+  // console.log({ openOrders });
+  // socket.emit('openOrders', openOrders);
+
   let sell = false;
 
   if (openOrders.length > 0) {
@@ -213,49 +220,11 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
   stopLossHistory.push(stopLossValue);
   stopGainHistory.push(stopGainValue);
 
-  const macdHistogramData = macdData
-    .map(values => values.histogram)
-    .filter(value => value !== undefined);
-
   plot({
     OHLCV: OHLCV.slice(-1),
     indicators: { rsi: [rsiValue], macd: [macdValue] },
+    custom: [{ name: 'buyGate', data: [buyGateValue] }],
   });
-
-  // return;
-
-  // console.clear();
-  // const stopLossLine = new Array(closeValues.length)
-  //   .fill(stopLossValue)
-  //   .filter(value => value !== undefined);
-  // const stopGainLine = new Array(closeValues.length).fill(stopGainValue);
-  // plot([stopLossLine, stopGainLine, closeValues], {
-  //   height: 40,
-  //   colors: [asciichart.red, asciichart.green, asciichart.default],
-  // });
-
-  // plot(buyGateData);
-  // plot(buyTriggerData);
-  // plot(sellHistory);
-
-  // const line30 = new Array(rsiData.length).fill(30);
-  // const line70 = new Array(rsiData.length).fill(70);
-  // plot([line30, line70, rsiData], {
-  //   height: 10,
-  // });
-
-  // const line0 = new Array(macdHistogramData.length).fill(0);
-  // plot([line0, macdHistogramData], {
-  //   height: 10,
-  // });
-
-  // const line0Vol = new Array(candleSignData.length).fill(0);
-  // plot([line0Vol, candleSignData]);
-
-  // console.log(exchange.getBalance().baseBalance);
-  // console.log(exchange.getBalance().assetBalance);
-  // console.log(exchange.getBalance().profit);
-  // console.log(orders.length);
 };
 
 module.exports = {

@@ -1,5 +1,4 @@
 const exchange = require('./exchange');
-const socketPlot = require('./libs/socketPlot');
 const strategy = require('./strategy/stahp');
 const timeframeInMilliseconds = require('./constants/timeframeInMilliseconds');
 
@@ -25,15 +24,16 @@ const loop = async sim => {
 
 const run = async (config, socket) => {
   const initialData = await exchange.setup(config);
-  strategy.setup(initialData, socketPlot(socket));
+  strategy.setup(initialData, socket);
 
   const { timeframe, loopPeriodRatio, sim, simConfig } = config;
   const { timeMultiplier } = simConfig;
   const multiplier = sim ? timeMultiplier : 1;
   const interval =
     timeframeInMilliseconds[timeframe] / (loopPeriodRatio * multiplier);
-  console.log(interval);
+
   loopInterval = setInterval(loop, interval, sim);
+  // loop(sim);
 };
 
 module.exports = {

@@ -20,7 +20,6 @@ import {
   EdgeIndicator,
   MouseCoordinateX,
   MouseCoordinateY,
-  ZoomButtons,
   RSISeries,
   RSITooltip,
   MACDSeries,
@@ -28,8 +27,9 @@ import {
   withDeviceRatio,
   withSize,
 } from 'react-financial-charts';
+import OrderCurve from './OrderCurve';
 
-const mapData = ({ OHLCV, indicators }) =>
+const mapData = ({ OHLCV, indicators, custom }) =>
   OHLCV.map((item, index) => ({
     date: new Date(item[0]),
     open: item[1],
@@ -41,6 +41,7 @@ const mapData = ({ OHLCV, indicators }) =>
       rsi: indicators.rsi[index],
       macd: indicators.macd[index],
     },
+    custom: custom.map(curve => ({ data: curve.data[index] })),
   }));
 
 const candleChartExtents = data => [data.high, data.low];
@@ -48,7 +49,6 @@ const candleChartExtents = data => [data.high, data.low];
 const yEdgeIndicator = data => data.close;
 
 const volumeSeries = data => data.volume;
-const volumeChartExtents = data => data.volume;
 
 const rsiSeries = data => data.indicators.rsi;
 
@@ -62,6 +62,8 @@ const macdChartExtents = data => {
   ];
 };
 
+const customSeries = data => data.custom[0].data;
+
 const openCloseColor = data => (data.close > data.open ? '#26a69a' : '#ef5350');
 
 const positiveNegativeColor = data =>
@@ -69,6 +71,7 @@ const positiveNegativeColor = data =>
 
 const StockChart = ({
   data: initialData = { OHLCV: [], indicators: [] },
+  orders,
   dateTimeFormat = '%d %b',
   width,
   height,
@@ -107,7 +110,7 @@ const StockChart = ({
   const gridHeight = height - margin.top - margin.bottom;
   const secondaryChartHeight = 100;
   const chartGutter = 32;
-  const numOfSecondaryCharts = 3;
+  const numOfSecondaryCharts = 4;
 
   const mainChartHeight =
     gridHeight - numOfSecondaryCharts * (secondaryChartHeight + chartGutter);
@@ -122,6 +125,11 @@ const StockChart = ({
   const macdChartOrigin = (_, h) => [
     0,
     mainChartHeight + 2 * secondaryChartHeight + chartGutter,
+  ];
+
+  const customChartOrigin = (_, h) => [
+    0,
+    mainChartHeight + 3 * secondaryChartHeight + chartGutter,
   ];
 
   const timeDisplayFormat = timeFormat(dateTimeFormat);
@@ -197,14 +205,17 @@ const StockChart = ({
           ]}
         />
 
-        {/* <ZoomButtons /> */}
+        {orders.map(order => (
+          <OrderCurve order={order} />
+        ))}
+
         <OHLCTooltip origin={[8, 16]} />
       </Chart>
 
       <Chart
         id={2}
         height={secondaryChartHeight}
-        yExtents={volumeChartExtents}
+        yExtents={volumeSeries}
         origin={volumeChartOrigin}
         padding={{ top: 8, bottom: 8 }}
       >
@@ -250,7 +261,7 @@ const StockChart = ({
         origin={macdChartOrigin}
         height={secondaryChartHeight}
       >
-        <XAxis />
+        {/* <XAxis /> */}
         <YAxis ticks={4} />
 
         <MACDSeries
@@ -267,11 +278,30 @@ const StockChart = ({
         />
       </Chart>
 
+      <Chart
+        id={5}
+        height={secondaryChartHeight}
+        yExtents={[0, 1]}
+        origin={customChartOrigin}
+        padding={{ top: 8, bottom: 8 }}
+      >
+        <XAxis />
+        <YAxis ticks={1} />
+
+        <BarSeries yAccessor={customSeries} />
+
+        <SingleValueTooltip
+          yAccessor={customSeries}
+          yLabel="Buy gate"
+          origin={[8, 16]}
+        />
+      </Chart>
+
       <CrossHairCursor />
     </ChartCanvas>
   );
 };
 
-export default withSize({ style: { minHeight: 800 } })(
+export default withSize({ style: { minHeight: 1000 } })(
   withDeviceRatio()(StockChart)
 );

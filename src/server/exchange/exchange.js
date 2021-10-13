@@ -47,10 +47,16 @@ const getData = async () => {
   };
 };
 
-const createOrder = (...args) => client.createOrder(...args);
+const createOrder = (symbol, type, side, amount, price) => {
+  return client.createOrder(symbol, type, side, amount, price);
+};
 const cancelOrder = (...args) => client.cancelOrder(...args);
 
-const getBalance = () => client.getBalance(); // FIXME
+const getBalance = () => client.fetchBalance();
+
+const loadMarkets = () => client.loadMarkets();
+
+const fetchOrders = (...args) => client.fetchOrders(...args);
 
 module.exports = {
   setup,
@@ -59,4 +65,7 @@ module.exports = {
   createOrder,
   cancelOrder,
   getBalance,
+
+  loadMarkets,
+  fetchOrders,
 };

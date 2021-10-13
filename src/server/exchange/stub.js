@@ -156,23 +156,20 @@ module.exports = async config => {
   };
 
   const loop = async () => {
-    const { last: price } = await fetchTicker();
-
-    orders.forEach(order => {
-      const { id, side, info, params } = order;
-      if (side === 'sell') {
-        if (info.processStatus === 'idle' && price >= params.stopPrice) {
-          order.info.processStatus = 'active';
-          return;
-        }
-
-        if (info.processStatus === 'active' && price <= params.stopPrice) {
-          executeOrder(id, price);
-          return;
-        }
-      }
-    });
-
+    // const { last: price } = await fetchTicker();
+    // orders.forEach(order => {
+    //   const { id, side, info, params } = order;
+    //   if (side === 'sell') {
+    //     if (info.processStatus === 'idle' && price >= params.stopPrice) {
+    //       order.info.processStatus = 'active';
+    //       return;
+    //     }
+    //     if (info.processStatus === 'active' && price <= params.stopPrice) {
+    //       executeOrder(id, price);
+    //       return;
+    //     }
+    //   }
+    // });
     // if (orders.length) console.log('orders', orders);
   };
 
