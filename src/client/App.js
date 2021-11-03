@@ -75,6 +75,10 @@ const App = () => {
     socket.on('openOrders', newOpenOrders => {
       setOrders(currentOrders => processOrders(newOpenOrders, currentOrders));
     });
+
+    socket.on('openOrder', newOrder => {
+      setOrders(currentOrders => [...currentOrders, newOrder]);
+    });
   }, []);
 
   return (

@@ -1,6 +1,6 @@
-import React from 'react';
-import { format } from 'd3-format';
-import { timeFormat } from 'd3-time-format';
+import React from "react";
+import { format } from "d3-format";
+import { timeFormat } from "d3-time-format";
 import {
   ema,
   discontinuousTimeScaleProviderBuilder,
@@ -10,6 +10,7 @@ import {
   BarSeries,
   CandlestickSeries,
   LineSeries,
+  AreaSeries,
   MovingAverageTooltip,
   OHLCTooltip,
   SingleValueTooltip,
@@ -26,8 +27,8 @@ import {
   MACDTooltip,
   withDeviceRatio,
   withSize,
-} from 'react-financial-charts';
-import OrderCurve from './OrderCurve';
+} from "react-financial-charts";
+import OrderCurve from "./OrderCurve";
 
 const mapData = ({ OHLCV, indicators, custom }) =>
   OHLCV.map((item, index) => ({
@@ -62,17 +63,18 @@ const macdChartExtents = data => {
   ];
 };
 
-const customSeries = data => data.custom[0].data;
+const customSeries0 = data => data.custom[0].data;
+const customSeries1 = data => data.custom[1].data;
 
-const openCloseColor = data => (data.close > data.open ? '#26a69a' : '#ef5350');
+const openCloseColor = data => (data.close > data.open ? "#26a69a" : "#ef5350");
 
 const positiveNegativeColor = data =>
-  data.indicators.macd.divergence >= 0 ? '#26a69a' : '#ef5350';
+  data.indicators.macd.divergence >= 0 ? "#26a69a" : "#ef5350";
 
 const StockChart = ({
   data: initialData = { OHLCV: [], indicators: [] },
   orders,
-  dateTimeFormat = '%d %b',
+  dateTimeFormat = "%d %b",
   width,
   height,
 }) => {
@@ -102,15 +104,15 @@ const StockChart = ({
 
   const { data, xScale, xAccessor, displayXAccessor } =
     ScaleProvider(calculatedData);
-  const pricesDisplayFormat = format('.2f');
+  const pricesDisplayFormat = format(".2f");
   const max = xAccessor(data[data.length - 1]);
   const min = xAccessor(data[Math.max(0, data.length - 100)]);
   const xExtents = [min, max + 5];
 
   const gridHeight = height - margin.top - margin.bottom;
-  const secondaryChartHeight = 100;
+  const secondaryChartHeight = 80;
   const chartGutter = 32;
-  const numOfSecondaryCharts = 4;
+  const numOfSecondaryCharts = 5;
 
   const mainChartHeight =
     gridHeight - numOfSecondaryCharts * (secondaryChartHeight + chartGutter);
@@ -127,9 +129,14 @@ const StockChart = ({
     mainChartHeight + 2 * secondaryChartHeight + chartGutter,
   ];
 
-  const customChartOrigin = (_, h) => [
+  const customChar0tOrigin = (_, h) => [
     0,
     mainChartHeight + 3 * secondaryChartHeight + chartGutter,
+  ];
+
+  const customChar1tOrigin = (_, h) => [
+    0,
+    mainChartHeight + 4 * secondaryChartHeight + chartGutter,
   ];
 
   const timeDisplayFormat = timeFormat(dateTimeFormat);
@@ -137,9 +144,9 @@ const StockChart = ({
   const macdAppearance = {
     fillStyle: { divergence: positiveNegativeColor },
     strokeStyle: {
-      macd: '#0093FF',
-      signal: '#D84315',
-      zero: 'rgba(0, 0, 0, 0.3)',
+      macd: "#0093FF",
+      signal: "#D84315",
+      zero: "rgba(0, 0, 0, 0.3)",
     },
   };
 
@@ -192,13 +199,13 @@ const StockChart = ({
           options={[
             {
               yAccessor: ema26.accessor(),
-              type: 'EMA',
+              type: "EMA",
               stroke: ema26.stroke(),
               windowSize: ema26.options().windowSize,
             },
             {
               yAccessor: ema12.accessor(),
-              type: 'EMA',
+              type: "EMA",
               stroke: ema12.stroke(),
               windowSize: ema12.options().windowSize,
             },
@@ -282,17 +289,36 @@ const StockChart = ({
         id={5}
         height={secondaryChartHeight}
         yExtents={[0, 1]}
-        origin={customChartOrigin}
+        origin={customChar0tOrigin}
+        padding={{ top: 8, bottom: 8 }}
+      >
+        {/* <XAxis /> */}
+        <YAxis ticks={1} />
+
+        <AreaSeries yAccessor={customSeries0} />
+
+        <SingleValueTooltip
+          yAccessor={customSeries0}
+          yLabel="Buy gate"
+          origin={[8, 16]}
+        />
+      </Chart>
+
+      <Chart
+        id={6}
+        height={secondaryChartHeight}
+        yExtents={[0, 1]}
+        origin={customChar1tOrigin}
         padding={{ top: 8, bottom: 8 }}
       >
         <XAxis />
         <YAxis ticks={1} />
 
-        <BarSeries yAccessor={customSeries} />
+        <BarSeries yAccessor={customSeries1} />
 
         <SingleValueTooltip
-          yAccessor={customSeries}
-          yLabel="Buy gate"
+          yAccessor={customSeries1}
+          yLabel="Buy trigger"
           origin={[8, 16]}
         />
       </Chart>
@@ -302,6 +328,6 @@ const StockChart = ({
   );
 };
 
-export default withSize({ style: { minHeight: 1000 } })(
+export default withSize({ style: { minHeight: 900 } })(
   withDeviceRatio()(StockChart)
 );

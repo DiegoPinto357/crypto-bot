@@ -21,13 +21,15 @@ const io = socketIo(server, {
 });
 
 io.on('connection', socket => {
+  socket.sendBuffer = [];
+
   console.log('New client connected');
 
   const config = {
     asset: 'BTC',
     base: 'USDT',
     timeframe: '1m',
-    loopPeriodRatio: 12,
+    loopPeriodRatio: 4,
     sandboxMode: true,
     sim: true,
     simConfig: {
@@ -40,6 +42,7 @@ io.on('connection', socket => {
   main.run(config, socket);
 
   socket.on('disconnect', () => {
+    main.stop();
     console.log('Client disconnected');
   });
 });

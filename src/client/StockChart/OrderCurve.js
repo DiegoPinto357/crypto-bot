@@ -2,8 +2,6 @@ import {
   LineSeries,
   ScatterSeries,
   CircleMarker,
-  Annotate,
-  SvgPathAnnotation,
 } from 'react-financial-charts';
 
 const getCurve =
@@ -25,43 +23,44 @@ const getCurveEnd =
   ({ date }) => {
     if (!order) return null;
 
-    const { lastTradeTimestamp, status, amount } = order;
-    if (status === 'open') return null;
+    const { timestamp, status, price } = order;
+    // if (status === "open") return null;
 
     const currentTimestamp = new Date(date).getTime();
+    const nextTimestamp = currentTimestamp + 60 * 1000;
 
-    return currentTimestamp === lastTradeTimestamp ? amount : null;
+    // console.log({ currentTimestamp, nextTimestamp, timestamp });
+    // console.log(timestamp >= currentTimestamp, timestamp <= nextTimestamp);
+
+    return timestamp >= currentTimestamp && timestamp <= nextTimestamp
+      ? price
+      : null;
   };
 
 const getColor = ({ side }) => (side === 'buy' ? '#2196f3' : '#F38121');
 
-const when =
-  order =>
-  ({ date }) => {
-    const { lastTradeTimestamp, status } = order;
-    if (status === 'open') return false;
-
-    const currentTimestamp = new Date(date).getTime();
-    console.log({ currentTimestamp, lastTradeTimestamp });
-    return currentTimestamp === lastTradeTimestamp;
-  };
-
 const OrderCurve = props => {
   const { order, ...rest } = props;
 
+  const color = order.side === 'buy' ? '#2196f3' : '#F38121';
+
   return (
     <>
-      <LineSeries
+      {/* <LineSeries
         yAccessor={getCurve(order)}
         strokeStyle={getColor(order)}
         strokeWidth={2}
         {...rest}
-      />
+      /> */}
 
       <ScatterSeries
         yAccessor={getCurveEnd(order)}
         marker={CircleMarker}
-        markerProps={{ r: 5 }}
+        markerProps={{
+          r: 3,
+          strokeStyle: '#FFF',
+          fillStyle: color,
+        }}
       />
 
       {/* <Annotate

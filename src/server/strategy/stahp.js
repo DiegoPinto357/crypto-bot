@@ -99,11 +99,21 @@ const setup = (initialData, socketParam) => {
   plot({
     OHLCV: initialData,
     indicators: { rsi: rsi.getResult(), macd: macd.getResult() },
-    custom: [{ name: 'buyGate', data: buyGate.getResult() }],
+    custom: [
+      { name: 'buyGate', data: buyGate.getResult() },
+      { name: 'buyTrigger', data: buyTrigger.getResult() },
+    ],
   });
+
+  orders = [];
 };
 
 const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
+  const timestamp = OHLCV.slice(-1)[0][0];
+  const limitTimestamp = 1632979805400 + 100 * 60 * 1000;
+
+  if (timestamp >= limitTimestamp) return;
+
   // console.log({ openOrders });
   // socket.emit('openOrders', openOrders);
 
@@ -182,26 +192,37 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
     candleSign: candleSignValue,
   });
 
-  if (buyTriggerValue && orders.length < 1) {
-    const amount = 10 / marketPrice.last;
-    stopLossValue = marketPrice.last * (1 - stopLossMargin);
-    stopGainValue = marketPrice.last * (1 + minProfit);
+  if (buyTriggerValue) {
+    const price = marketPrice.last;
+    // const amount = 10 / price;
 
-    const [marketOrderId, stopLossOrderId, stopGainOrderId] = await Promise.all(
-      [
-        exchange.createOrder('BTC/USDT', 'market', 'buy', amount),
-        exchange.createOrder('BTC/USDT', 'limit', 'sell', amount, {
-          type: 'stopLimit',
-          stopPrice: stopLossValue,
-        }),
-        exchange.createOrder('BTC/USDT', 'limit', 'sell', amount, {
-          type: 'stopLimit',
-          stopPrice: stopGainValue,
-        }),
-      ]
-    );
+    console.log(marketPrice.timestamp);
 
-    orders.push({ marketOrderId, stopLossOrderId, stopGainOrderId, amount });
+    socket.emit('openOrder', {
+      timestamp: marketPrice.timestamp,
+      side: 'buy',
+      type: 'market',
+      price,
+    });
+
+    // stopLossValue = marketPrice.last * (1 - stopLossMargin);
+    // stopGainValue = marketPrice.last * (1 + minProfit);
+
+    // const [marketOrderId, stopLossOrderId, stopGainOrderId] = await Promise.all(
+    //   [
+    //     exchange.createOrder("BTC/USDT", "market", "buy", amount),
+    //     exchange.createOrder("BTC/USDT", "limit", "sell", amount, {
+    //       type: "stopLimit",
+    //       stopPrice: stopLossValue,
+    //     }),
+    //     exchange.createOrder("BTC/USDT", "limit", "sell", amount, {
+    //       type: "stopLimit",
+    //       stopPrice: stopGainValue,
+    //     }),
+    //   ]
+    // );
+
+    // orders.push({ marketOrderId, stopLossOrderId, stopGainOrderId, amount });
   }
 
   const rsiData = rsi.getResult();
@@ -223,7 +244,10 @@ const loop = async ({ hasNewCandle, OHLCV, marketPrice, openOrders }) => {
   plot({
     OHLCV: OHLCV.slice(-1),
     indicators: { rsi: [rsiValue], macd: [macdValue] },
-    custom: [{ name: 'buyGate', data: [buyGateValue] }],
+    custom: [
+      { name: 'buyGate', data: [buyGateValue] },
+      { name: 'buyTrigger', data: [buyTriggerValue] },
+    ],
   });
 };
 

@@ -9,7 +9,8 @@ const loop = async sim => {
 
   try {
     data = await exchange.getData();
-  } catch {
+  } catch (error) {
+    console.log(error);
     clearInterval(loopInterval);
     console.log('out of data!!!!!');
     console.log(exchange.getBalance());
@@ -36,6 +37,9 @@ const run = async (config, socket) => {
   // loop(sim);
 };
 
+const stop = () => clearInterval(loopInterval);
+
 module.exports = {
   run,
+  stop,
 };
