@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const main = require('./main');
+const strategy = require('./strategy/stahp');
 
 const port = 4001;
 
@@ -39,7 +40,7 @@ io.on('connection', socket => {
     },
   };
 
-  main.run(config, socket);
+  main.run(strategy, socket, config);
 
   socket.on('disconnect', () => {
     main.stop();
