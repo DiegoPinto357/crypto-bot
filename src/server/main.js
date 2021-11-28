@@ -16,6 +16,7 @@ const loop = async (strategy, socket, config) => {
   //   return;
   // }
 
+  // TODO remove params from loop, since they were already passed in the setup
   await strategy.loop(exchange, socket, config);
   if (config.sim) {
     await exchange.loop();

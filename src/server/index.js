@@ -3,7 +3,7 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const main = require('./main');
-const strategy = require('./strategy/stahp');
+const strategy = require('./strategy/rebalance');
 
 const port = 4001;
 

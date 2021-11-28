@@ -52,7 +52,9 @@ const createOrder = (symbol, type, side, amount, price) => {
 };
 const cancelOrder = (...args) => client.cancelOrder(...args);
 
-const getBalance = () => client.fetchBalance();
+const fetchBalance = () => client.fetchBalance();
+
+const fetchTickers = (...args) => client.fetchTickers(...args);
 
 const loadMarkets = () => client.loadMarkets();
 
@@ -64,7 +66,8 @@ module.exports = {
   getData,
   createOrder,
   cancelOrder,
-  getBalance,
+  fetchBalance,
+  fetchTickers,
 
   loadMarkets,
   fetchOrders,

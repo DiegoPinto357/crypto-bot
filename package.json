@@ -32,7 +32,8 @@
     "web-vitals": "^1.0.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.13"
+    "nodemon": "^2.0.13",
+    "rewire": "^5.0.0"
   },
   "eslintConfig": {
     "extends": [

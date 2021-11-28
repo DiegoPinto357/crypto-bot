@@ -10,6 +10,9 @@ const defaultConfig = {
   loopPeriodRatio: 4,
   sim: false,
   simConfig: { timeMultiplier: 10 * 60 },
+  strategy: {
+    assets: ['BTC', 'ETH', 'ADA', 'BUSD'],
+  },
 };
 
 const socket = {};
